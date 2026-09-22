@@ -1,0 +1,4 @@
+# Optional CPU fallback / advanced OCR.
+# Install PaddlePaddle CPU according to the current official Paddle instructions for your OS,
+# then install:
+paddleocr>=3.0

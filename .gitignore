@@ -1,0 +1,28 @@
+# Virtual Environment
+.venv/
+venv/
+ENV/
+
+# Python Cache & Testing
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+
+# Storage & Temporary Files
+storage/input/
+storage/working/
+storage/output/
+storage/evidence/
+storage/auto_input/
+storage/auto_output/
+*.pdf
+*.zip
+scratch/
+
+# OS / IDE
+.DS_Store
+.vscode/
+.idea/
+.env
