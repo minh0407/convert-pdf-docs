@@ -24,7 +24,7 @@ def _next_unique_job_id(base_name: str, used: set[str]) -> str:
     return candidate
 
 
-async def _convert_single_file(file: UploadFile, job_id: str | None = None):
+async def _convert_single_file(file: UploadFile, job_id: str | None = None, direct_download: bool = True):
     suffix = Path(file.filename or '').suffix.lower()
     if suffix not in SUPPORTED_EXTENSIONS:
         raise HTTPException(status_code=400, detail=f'Định dạng chưa hỗ trợ: {suffix}')
@@ -38,7 +38,18 @@ async def _convert_single_file(file: UploadFile, job_id: str | None = None):
         result = run_job(tmp_path, original_name=file.filename, job_id=final_job_id)
         result['client_filename'] = file.filename
         JOBS[result['job_id']] = result
-        return result
+        if result.get('status') == 'completed':
+            if direct_download:
+                pdf_path = Path(result['output_pdf'])
+                return FileResponse(
+                    pdf_path,
+                    media_type='application/pdf',
+                    filename=pdf_path.name
+                )
+            return result
+        else:
+            err_msg = ", ".join(result.get('errors', [])) or "Lỗi chuyển đổi file."
+            raise HTTPException(status_code=400, detail=f"Chuyển đổi thất bại: {err_msg}")
     finally:
         tmp_path.unlink(missing_ok=True)
 
@@ -121,15 +132,39 @@ def health():
     return {'status': 'ok', 'service': 'local-ocr-mvp'}
 
 
-@router.post('/convert')
-async def convert(file: UploadFile = File(...)):
+@router.post(
+    '/convert',
+    response_class=FileResponse,
+    responses={
+        200: {
+            "content": {
+                "application/zip": {},
+                "application/pdf": {},
+                "application/json": {}
+            },
+            "description": "Tải về trực tiếp file PDF (1) hoặc file ZIP chứa các tài liệu đã convert."
+        }
+    }
+)
+async def convert(file: UploadFile = File(...), direct_download: bool = True):
     suffix = Path(file.filename or '').suffix.lower()
     if suffix == '.zip':
         return await _convert_zip_file(file)
-    return await _convert_single_file(file)
+    return await _convert_single_file(file, direct_download=direct_download)
 
 
-@router.post('/convert-batch')
+@router.post(
+    '/convert-batch',
+    response_class=FileResponse,
+    responses={
+        200: {
+            "content": {
+                "application/zip": {}
+            },
+            "description": "Tải về file ZIP chứa các tài liệu đã convert."
+        }
+    }
+)
 async def convert_batch(files: list[UploadFile] = File(...)):
     if not files:
         raise HTTPException(status_code=400, detail='Không có file nào được tải lên.')
