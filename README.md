@@ -5,7 +5,8 @@ MVP OCR chạy local cho Windows/Linux, nhận PDF/DOC/DOCX/ảnh và xuất **P
 ## Mục tiêu
 
 - Local API chỉ bind `127.0.0.1:8000`.
-- OCR hậu trường bằng Tesseract (`vie+eng`).
+- Local API chỉ bind `127.0.0.1:8000`.
+- OCR hậu trường bằng VietOCR (Vietnamese Transformer OCR) + OpenCV Layout Line Detection.
 - Giữ nguyên trang gốc trong PDF đầu ra; ảnh/bảng/chữ ký/dấu vẫn nằm trong ảnh trang.
 - OCR copy được preprocess riêng, không làm thay đổi ảnh dùng tạo PDF cuối.
 - Evidence: JSON theo trang + crop ảnh ở vùng có rủi ro.
@@ -17,22 +18,8 @@ MVP OCR chạy local cho Windows/Linux, nhận PDF/DOC/DOCX/ảnh và xuất **P
 ### Python
 Khuyến nghị Python 3.12.
 
-### Tesseract OCR
-Cần cài Tesseract và bộ ngôn ngữ `vie` + `eng`, sau đó bảo đảm `tesseract` nằm trong PATH.
-
-Kiểm tra:
-
-```powershell
-tesseract --version
-tesseract --list-langs
-```
-
-Danh sách cần có tối thiểu:
-
-```text
-eng
-vie
-```
+### VietOCR & PyTorch
+VietOCR và PyTorch CPU tự động được cài đặt qua `requirements.txt`.
 
 ### LibreOffice
 Chỉ cần nếu xử lý `.doc` / `.docx`. Đảm bảo `soffice` nằm trong PATH.

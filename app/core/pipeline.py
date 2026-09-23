@@ -7,7 +7,7 @@ from PIL import Image
 from app.core.config import INPUT_DIR, WORKING_DIR, OUTPUT_DIR, EVIDENCE_DIR, DEFAULT_DPI, sanitize_filename, sanitize_job_id
 from app.processors.document import normalize_to_pdf, render_pdf_to_images
 from app.processors.preprocess import prepare_for_ocr, estimate_page_quality
-from app.engines.tesseract_engine import ocr_image as tesseract_ocr
+from app.engines.vietocr_engine import ocr_image as vietocr_ocr
 from app.analyzers.risk import classify_page
 from app.exporters.image_pdf import images_to_image_only_pdf, verify_image_only_pdf
 
@@ -53,7 +53,7 @@ def run_job(source_path: Path, original_name: str = None, job_id: str | None = N
             processed = work_dir / 'ocr_pages' / page_img.name
             prepare_for_ocr(page_img, processed)
             quality = estimate_page_quality(page_img)
-            regions = tesseract_ocr(processed)
+            regions = vietocr_ocr(processed)
             classification = classify_page(regions, quality)
             counts[classification['difficulty']] += 1
             if classification['difficulty'] == 'hard' or classification['risk_flags']:

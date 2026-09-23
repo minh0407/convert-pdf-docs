@@ -45,7 +45,8 @@ def verify_image_only_pdf(pdf_path: Path) -> Dict[str, Any]:
     all_pages_have_images = True
 
     try:
-        for index, page in enumerate(doc, start=1):
+        for index in range(1, doc.page_count + 1):
+            page = doc.load_page(index - 1)
             extracted = page.get_text('text') or ''
             text_chars = len(extracted.strip())
             images = page.get_images(full=True)
