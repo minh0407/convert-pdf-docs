@@ -96,6 +96,10 @@ async def _convert_zip_file(file: UploadFile):
                             if pdf_path.exists():
                                 out_zip.write(pdf_path, arcname=pdf_path.name)
                                 completed_count += 1
+                            if result.get('evidence_json'):
+                                ev_path = Path(result['evidence_json'])
+                                if ev_path.exists():
+                                    out_zip.write(ev_path, arcname=f"{pdf_path.stem}_analysis.json")
                         else:
                             err_msg = ", ".join(result.get('errors', [])) or "Lỗi không xác định"
                             failed_jobs.append(f"[{clean_name}]: {err_msg}")
