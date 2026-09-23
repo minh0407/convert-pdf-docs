@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from app.api.routes import router
 
@@ -6,6 +7,14 @@ app = FastAPI(
     title='Local OCR Image-PDF Service',
     version='0.2.0',
     description='Local-first OCR service. Final output PDF is rebuilt from raster page images only and verified to contain zero embedded text.'
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=['*'],
+    allow_credentials=True,
+    allow_methods=['*'],
+    allow_headers=['*'],
 )
 
 
