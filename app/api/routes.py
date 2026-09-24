@@ -3,7 +3,7 @@ import zipfile
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from fastapi import APIRouter, UploadFile, File, HTTPException
-from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 
 from app.core.config import SUPPORTED_EXTENSIONS, sanitize_filename, sanitize_job_id
 from app.core.pipeline import run_job
@@ -46,7 +46,7 @@ async def _convert_single_file(file: UploadFile, job_id: str | None = None, dire
                     media_type='application/pdf',
                     filename=pdf_path.name
                 )
-            return result
+            return JSONResponse(content=result)
         else:
             err_msg = ", ".join(result.get('errors', [])) or "Lỗi chuyển đổi file."
             raise HTTPException(status_code=400, detail=f"Chuyển đổi thất bại: {err_msg}")
@@ -138,7 +138,6 @@ def health():
 
 @router.post(
     '/convert',
-    response_class=FileResponse,
     responses={
         200: {
             "content": {
@@ -146,7 +145,7 @@ def health():
                 "application/pdf": {},
                 "application/json": {}
             },
-            "description": "Tải về trực tiếp file PDF (1) hoặc file ZIP chứa các tài liệu đã convert."
+            "description": "Tải về trực tiếp file PDF (1) hoặc file ZIP chứa các tài liệu đã convert hoặc trả về thông tin JSON của job."
         }
     }
 )
