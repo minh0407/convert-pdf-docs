@@ -209,33 +209,68 @@ async def convert_batch(files: list[UploadFile] = File(...)):
 
 @router.get('/jobs/{job_id}')
 def job(job_id: str):
-    if job_id not in JOBS:
-        raise HTTPException(status_code=404, detail='Không tìm thấy job')
-    return JOBS[job_id]
+    clean_id = sanitize_job_id(job_id)
+    if job_id in JOBS:
+        return JOBS[job_id]
+
+    disk_json = EVIDENCE_DIR / clean_id / 'analysis.json'
+    if disk_json.exists():
+        try:
+            import json
+            return json.loads(disk_json.read_text(encoding='utf-8'))
+        except Exception:
+            pass
+
+    raise HTTPException(status_code=404, detail='Không tìm thấy job')
 
 
 @router.get('/jobs/{job_id}/pdf')
 def download_pdf(job_id: str):
     result = JOBS.get(job_id)
-    if not result or result.get('status') != 'completed':
-        raise HTTPException(status_code=404, detail='PDF chưa sẵn sàng')
-    path = Path(result['output_pdf'])
-    return FileResponse(path, media_type='application/pdf', filename=path.name)
+    if result and result.get('status') == 'completed':
+        path = Path(result['output_pdf'])
+        if path.exists():
+            return FileResponse(path, media_type='application/pdf', filename=path.name)
+
+    clean_id = sanitize_job_id(job_id)
+    output_dir = OUTPUT_DIR / clean_id
+    if output_dir.exists():
+        pdfs = list(output_dir.glob('*.pdf'))
+        if pdfs:
+            return FileResponse(pdfs[0], media_type='application/pdf', filename=pdfs[0].name)
+
+    raise HTTPException(status_code=404, detail='PDF chưa sẵn sàng')
 
 
 @router.get('/jobs/{job_id}/verify')
 def verify_pdf(job_id: str):
     result = JOBS.get(job_id)
-    if not result or result.get('status') != 'completed':
-        raise HTTPException(status_code=404, detail='PDF chưa sẵn sàng')
-    path = Path(result['output_pdf'])
-    return verify_image_only_pdf(path)
+    if result and result.get('status') == 'completed':
+        path = Path(result['output_pdf'])
+        if path.exists():
+            return verify_image_only_pdf(path)
+
+    clean_id = sanitize_job_id(job_id)
+    output_dir = OUTPUT_DIR / clean_id
+    if output_dir.exists():
+        pdfs = list(output_dir.glob('*.pdf'))
+        if pdfs:
+            return verify_image_only_pdf(pdfs[0])
+
+    raise HTTPException(status_code=404, detail='PDF chưa sẵn sàng')
 
 
 @router.get('/jobs/{job_id}/evidence')
 def download_evidence(job_id: str):
     result = JOBS.get(job_id)
-    if not result or result.get('status') != 'completed':
-        raise HTTPException(status_code=404, detail='Evidence chưa sẵn sàng')
-    path = Path(result['evidence_json'])
-    return FileResponse(path, media_type='application/json', filename=path.name)
+    if result and result.get('status') == 'completed':
+        path = Path(result['evidence_json'])
+        if path.exists():
+            return FileResponse(path, media_type='application/json', filename=path.name)
+
+    clean_id = sanitize_job_id(job_id)
+    disk_json = EVIDENCE_DIR / clean_id / 'analysis.json'
+    if disk_json.exists():
+        return FileResponse(disk_json, media_type='application/json', filename=f"{clean_id}_analysis.json")
+
+    raise HTTPException(status_code=404, detail='Evidence chưa sẵn sàng')
