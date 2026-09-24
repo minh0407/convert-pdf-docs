@@ -47,8 +47,9 @@ def verify_image_only_pdf(pdf_path: Path) -> Dict[str, Any]:
     try:
         for index in range(1, doc.page_count + 1):
             page = doc.load_page(index - 1)
-            extracted = page.get_text('text') or ''
-            text_chars = len(extracted.strip())
+            extracted = page.get_text('text')
+            extracted_text = extracted if isinstance(extracted, str) else ''
+            text_chars = len(extracted_text.strip())
             images = page.get_images(full=True)
             image_count = len(images)
             total_text_chars += text_chars

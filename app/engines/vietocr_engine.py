@@ -10,6 +10,20 @@ from vietocr.tool.predictor import Predictor
 _PREDICTOR = None
 
 
+def _normalize_prediction_text(prediction: Any) -> str:
+    if prediction is None:
+        return ''
+    if isinstance(prediction, tuple):
+        if not prediction:
+            return ''
+        return str(prediction[0] or '').strip()
+    if isinstance(prediction, list):
+        if not prediction:
+            return ''
+        return str(prediction[0] or '').strip()
+    return str(prediction).strip()
+
+
 def get_predictor() -> Predictor:
     global _PREDICTOR
     if _PREDICTOR is None:
@@ -69,8 +83,8 @@ def ocr_image(image_path: Path, **kwargs) -> List[Dict[str, Any]]:
         except Exception:
             texts = [predictor.predict(c) for c in crops]
 
-        for (x, y, w, h), txt in zip(valid_boxes, texts):
-            txt = (txt or '').strip()
+        for (x, y, w, h), raw_txt in zip(valid_boxes, texts):
+            txt = _normalize_prediction_text(raw_txt)
             if txt:
                 regions.append({
                     'text': txt,
@@ -82,7 +96,7 @@ def ocr_image(image_path: Path, **kwargs) -> List[Dict[str, Any]]:
 
     if not regions and width > 20 and height > 20:
         try:
-            txt = predictor.predict(pil_img).strip()
+            txt = _normalize_prediction_text(predictor.predict(pil_img))
             if txt:
                 regions.append({
                     'text': txt,
