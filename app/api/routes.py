@@ -44,7 +44,11 @@ async def _convert_single_file(file: UploadFile, job_id: str | None = None, dire
                 return FileResponse(
                     pdf_path,
                     media_type='application/pdf',
-                    filename=pdf_path.name
+                    filename=pdf_path.name,
+                    headers={
+                        'X-Job-Id': result['job_id'],
+                        'Access-Control-Expose-Headers': 'X-Job-Id, Content-Disposition'
+                    }
                 )
             return JSONResponse(content=result)
         else:
