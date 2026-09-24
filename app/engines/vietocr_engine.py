@@ -49,7 +49,8 @@ def ocr_image(image_path: Path, **kwargs) -> List[Dict[str, Any]]:
     # Sort top to bottom, then left to right
     line_boxes.sort(key=lambda b: (b[1] // 15, b[0]))
 
-    regions = []
+    crops = []
+    valid_boxes = []
     for x, y, w, h in line_boxes:
         pad = 2
         crop_x1 = max(0, x - pad)
@@ -58,19 +59,26 @@ def ocr_image(image_path: Path, **kwargs) -> List[Dict[str, Any]]:
         crop_y2 = min(height, y + h + pad)
 
         crop_pil = pil_img.crop((crop_x1, crop_y1, crop_x2, crop_y2))
-        try:
-            txt = predictor.predict(crop_pil).strip()
-        except Exception:
-            txt = ""
+        crops.append(crop_pil)
+        valid_boxes.append((x, y, w, h))
 
-        if txt:
-            regions.append({
-                'text': txt,
-                'confidence': 0.95,
-                'bbox': [int(x), int(y), int(x + w), int(y + h)],
-                'engine': 'vietocr',
-                'risk_flags': []
-            })
+    regions = []
+    if crops:
+        try:
+            texts = predictor.predict_batch(crops)
+        except Exception:
+            texts = [predictor.predict(c) for c in crops]
+
+        for (x, y, w, h), txt in zip(valid_boxes, texts):
+            txt = (txt or '').strip()
+            if txt:
+                regions.append({
+                    'text': txt,
+                    'confidence': 0.95,
+                    'bbox': [int(x), int(y), int(x + w), int(y + h)],
+                    'engine': 'vietocr',
+                    'risk_flags': []
+                })
 
     if not regions and width > 20 and height > 20:
         try:
